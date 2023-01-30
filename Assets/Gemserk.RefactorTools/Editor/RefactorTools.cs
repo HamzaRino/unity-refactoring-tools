@@ -181,15 +181,7 @@ namespace Gemserk.RefactorTools.Editor
             
             if (scenes != null && scenes.Count > 0)
             {
-                var loadedScenesList = new List<string>();
-                var loadedScenes = SceneManager.sceneCount;
-                var activeScene = SceneManager.GetActiveScene().path;
-
-                for (var i = 0; i < loadedScenes; i++)
-                {
-                    var scene = SceneManager.GetSceneAt(i);
-                    loadedScenesList.Add(scene.path);
-                }
+                var setup = EditorSceneManager.GetSceneManagerSetup();
 
                 var scenesCount = scenes.Count;
 
@@ -258,17 +250,7 @@ namespace Gemserk.RefactorTools.Editor
                     }
                 }
 
-                var newActiveScene = EditorSceneManager.OpenScene(activeScene,
-                    OpenSceneMode.Single);
-                for (var i = 0; i < loadedScenes; i++)
-                {
-                    if (loadedScenesList[i].Equals(activeScene))
-                        continue;
-                    EditorSceneManager.OpenScene(loadedScenesList[i],
-                        OpenSceneMode.Additive);
-                }
-
-                SceneManager.SetActiveScene(newActiveScene);
+                EditorSceneManager.RestoreSceneManagerSetup(setup);
             }
         }
     }
