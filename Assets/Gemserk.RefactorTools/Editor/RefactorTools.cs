@@ -178,12 +178,11 @@ namespace Gemserk.RefactorTools.Editor
             // Then iterate in all scenes (if include scenes is true)
 
             var scenes = parameters.scenes;
-            
-            if (scenes != null && scenes.Count > 0)
+            var scenesCount = scenes?.Count ?? 0;
+
+            if (scenesCount > 0)
             {
                 var setup = EditorSceneManager.GetSceneManagerSetup();
-
-                var scenesCount = scenes.Count;
 
                 EditorUtility.DisplayProgressBar($"Refactoring {scenesCount} scenes", "Starting...", 0);
 
