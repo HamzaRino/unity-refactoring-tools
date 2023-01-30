@@ -178,79 +178,79 @@ namespace Gemserk.RefactorTools.Editor
             // Then iterate in all scenes (if include scenes is true)
 
             var scenes = parameters.scenes;
-            var scenesCount = scenes?.Count ?? 0;
+            if (scenes == null) return;
+            
+            var scenesCount = scenes.Count;
+            if (scenesCount == 0) return;
+            
+            var setup = EditorSceneManager.GetSceneManagerSetup();
 
-            if (scenesCount > 0)
+            EditorUtility.DisplayProgressBar($"Refactoring {scenesCount} scenes", "Starting...", 0);
+
+            for (var i = 0; i < scenesCount; i++)
             {
-                var setup = EditorSceneManager.GetSceneManagerSetup();
+                var scenePath = scenes[i];
 
-                EditorUtility.DisplayProgressBar($"Refactoring {scenesCount} scenes", "Starting...", 0);
-
-                for (var i = 0; i < scenesCount; i++)
+                try
                 {
-                    var scenePath = scenes[i];
+                    EditorUtility.DisplayProgressBar($"Refactoring {scenesCount} scenes", scenePath,
+                        i / (float)scenesCount);
 
-                    try
+                    var scene = EditorSceneManager.OpenScene(scenePath,
+                        OpenSceneMode.Single);
+
+                    var componentsList = new List<T>();
+
+                    // We can iterate over root objects and collect stuff to run the refactor over
+                    var rootObjects = scene.GetRootGameObjects();
+                    for (var j = 0; j < rootObjects.Length; j++)
                     {
-                        EditorUtility.DisplayProgressBar($"Refactoring {scenesCount} scenes", scenePath,
-                            i / (float)scenesCount);
+                        var go = rootObjects[j];
+                        var components = go.GetComponentsInChildren<T>(true);
+                        componentsList.AddRange(components.ToList());
+                    }
 
-                        var scene = EditorSceneManager.OpenScene(scenePath,
-                            OpenSceneMode.Single);
+                    var modified = false;
 
-                        var componentsList = new List<T>();
+                    foreach (var component in componentsList)
+                    {
+                        var gameObject = component.gameObject;
 
-                        // We can iterate over root objects and collect stuff to run the refactor over
-                        var rootObjects = scene.GetRootGameObjects();
-                        for (var j = 0; j < rootObjects.Length; j++)
+                        var result = callback(gameObject, new RefactorData
                         {
-                            var go = rootObjects[j];
-                            var components = go.GetComponentsInChildren<T>(true);
-                            componentsList.AddRange(components.ToList());
-                        }
+                            isPrefab = false,
+                            scenePath = scenePath,
+                            inScene = true
+                        });
 
-                        var modified = false;
-
-                        foreach (var component in componentsList)
+                        if (result.completed)
                         {
-                            var gameObject = component.gameObject;
-
-                            var result = callback(gameObject, new RefactorData
+                            modified = true;
+                            if (component != null)
                             {
-                                isPrefab = false,
-                                scenePath = scenePath,
-                                inScene = true
-                            });
-
-                            if (result.completed)
+                                EditorUtility.SetDirty(component);
+                            }
+                            else if (gameObject != null)
                             {
-                                modified = true;
-                                if (component != null)
-                                {
-                                    EditorUtility.SetDirty(component);
-                                }
-                                else if (gameObject != null)
-                                {
-                                    EditorUtility.SetDirty(gameObject);
-                                }
+                                EditorUtility.SetDirty(gameObject);
                             }
                         }
-
-                        if (modified)
-                        {
-                            EditorSceneManager.MarkSceneDirty(scene);
-                            EditorSceneManager.SaveScene(scene);
-                        }
-
                     }
-                    finally
+
+                    if (modified)
                     {
-                        EditorUtility.ClearProgressBar();
+                        EditorSceneManager.MarkSceneDirty(scene);
+                        EditorSceneManager.SaveScene(scene);
                     }
-                }
 
-                EditorSceneManager.RestoreSceneManagerSetup(setup);
+                }
+                finally
+                {
+                    EditorUtility.ClearProgressBar();
+                }
             }
+
+            EditorSceneManager.RestoreSceneManagerSetup(setup);
         }
     }
 }
