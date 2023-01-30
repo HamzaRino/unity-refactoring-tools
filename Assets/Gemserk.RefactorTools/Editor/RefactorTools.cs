@@ -203,9 +203,8 @@ namespace Gemserk.RefactorTools.Editor
 
                     // We can iterate over root objects and collect stuff to run the refactor over
                     var rootObjects = scene.GetRootGameObjects();
-                    for (var j = 0; j < rootObjects.Length; j++)
+                    foreach (var go in rootObjects)
                     {
-                        var go = rootObjects[j];
                         var components = go.GetComponentsInChildren<T>(true);
                         componentsList.AddRange(components.ToList());
                     }
@@ -223,17 +222,15 @@ namespace Gemserk.RefactorTools.Editor
                             inScene = true
                         });
 
-                        if (result.completed)
+                        if (!result.completed) continue;
+                        modified = true;
+                        if (component != null)
                         {
-                            modified = true;
-                            if (component != null)
-                            {
-                                EditorUtility.SetDirty(component);
-                            }
-                            else if (gameObject != null)
-                            {
-                                EditorUtility.SetDirty(gameObject);
-                            }
+                            EditorUtility.SetDirty(component);
+                        }
+                        else if (gameObject != null)
+                        {
+                            EditorUtility.SetDirty(gameObject);
                         }
                     }
 
